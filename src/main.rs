@@ -1,31 +1,24 @@
-use std::collections::HashMap;
+use std::{fs::File, path::PathBuf};
 
-use config::CommitmentFile;
-
-use crate::config::Task;
+use anyhow::Result;
+use clap::Parser;
 
 mod config;
+mod interpreter;
 
-fn main() {
-    let mut tasks = HashMap::new();
-    tasks.insert(
-        "cargo-clippy".to_owned(),
-        Task {
-            can_fail: None,
-            execute: vec!["cargo clippy -- -D warnings".to_owned()],
-        },
-    );
-    tasks.insert(
-        "cargo-fmt".to_owned(),
-        Task {
-            can_fail: None,
-            execute: vec!["cd subdirectory".to_owned(), "cargo fmt --check".to_owned()],
-        },
-    );
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long, name = "FILE")]
+    config: PathBuf,
+}
 
-    let commitment_file = CommitmentFile {
-        tasks,
-        ..Default::default()
-    };
-    println!("{commitment_file:#?}");
+fn main() -> Result<()> {
+    let args = Args::parse();
+    let file = File::open(args.config)?;
+    let config = serde_yaml::from_reader(file)?;
+
+    interpreter::interpret(&config);
+
+    Ok(())
 }

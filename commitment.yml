@@ -1,0 +1,7 @@
+cargo-fmt:
+  execute:
+    - cargo fmt --check
+
+cargo-clippy:
+  execute:
+    - cargo clippy -- -D warnings

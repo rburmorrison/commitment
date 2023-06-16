@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+use indexmap::IndexMap;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Defaults {
@@ -16,9 +15,10 @@ pub struct Task {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct CommitmentFile {
+pub struct Config {
+    #[serde(default)]
     pub defaults: Defaults,
 
     #[serde(flatten)]
-    pub tasks: HashMap<String, Task>,
+    pub tasks: IndexMap<String, Task>,
 }
