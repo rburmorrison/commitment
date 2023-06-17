@@ -1,3 +1,15 @@
+normal-prints:
+  execute:
+    - echo "Hello, world!"
+    - sleep 2
+    - echo "Hello, there!"
+    - sleep 2
+
+cargo-build:
+  execute:
+    - cargo clean
+    - cargo build
+
 cargo-test:
   execute:
     - cargo fmt --check
