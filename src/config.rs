@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Defaults {

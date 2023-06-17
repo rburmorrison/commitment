@@ -24,6 +24,9 @@ jobs:
       - name: Build the project
         run: cargo build
 
+      - name: Execute tests
+        run: cargo test
+
       - name: Run clippy
         run: cargo clippy -- -D warnings
 
