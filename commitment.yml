@@ -1,3 +1,7 @@
+cargo-test:
+  execute:
+    - cargo fmt --check
+
 cargo-fmt:
   execute:
     - cargo fmt --check
