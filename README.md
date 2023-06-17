@@ -10,7 +10,7 @@ Simplify your Git pre-commit hooks.
 defaults:
   can-fail: false
 
-# This is an examle of a task. You can specify as many as you'd like.
+# This is an example of a task. You can specify as many as you'd like.
 cargo-clippy:
 
   # Define the steps it takes for this task to complete here.
