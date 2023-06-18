@@ -2,6 +2,11 @@
 name = "commitment"
 version = "0.1.0"
 edition = "2021"
+authors = ["Ryan Burmeister-Morrison"]
+description = "Simplify your Git pre-commit hooks"
+license = "GPL-3.0-or-later"
+homepage = "https://github.com/rburmorrison/commitment"
+repository = "https://github.com/rburmorrison/commitment"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
