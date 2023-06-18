@@ -142,6 +142,7 @@ dependencies = [
  "once_cell",
  "serde",
  "serde_yaml",
+ "thiserror",
 ]
 
 [[package]]

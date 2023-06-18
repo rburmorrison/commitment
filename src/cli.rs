@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 
 mod execute;
+mod install;
 
 #[derive(clap::Parser)]
 #[command(author, version, about, long_about = None)]
@@ -13,6 +14,7 @@ struct Cli {
 #[derive(clap::Subcommand)]
 enum Command {
     Execute(execute::Args),
+    Install(install::Args),
 }
 
 pub fn execute() -> Result<()> {
@@ -20,5 +22,6 @@ pub fn execute() -> Result<()> {
 
     match cli.command {
         Command::Execute(args) => execute::execute(args),
+        Command::Install(args) => install::execute(args),
     }
 }

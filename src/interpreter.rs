@@ -11,6 +11,7 @@ use std::{
 use anyhow::{bail, Result};
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
 use indexmap::IndexMap;
+use thiserror::Error;
 
 use crate::{
     config::{Config, Task},
@@ -19,21 +20,12 @@ use crate::{
     temp::TFile,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
     /// Occurs when a task returns a non-zero error code.
+    #[error(r#"task "{0}" returned a non-zero exit code"#)]
     TaskFailed(String),
 }
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::TaskFailed(task) => write!(f, r#"task "{task}" returned a non-zero exit code"#),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
 
 fn draw_box<S: AsRef<str>>(input: S) {
     let input = input.as_ref();
