@@ -13,7 +13,12 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Command {
+    /// Run a commitment file.
+    ///
+    /// This is primarily used for the pre-commit hook itself.
     Execute(execute::Args),
+
+    /// Install the pre-commit hook to run the commitment file.
     Install(install::Args),
 }
 

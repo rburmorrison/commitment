@@ -6,6 +6,8 @@ use crate::interpreter;
 
 #[derive(clap::Args)]
 pub struct Args {
+    /// The Commitment file to execute.
+    #[arg(name = "FILE")]
     config: PathBuf,
 }
 
