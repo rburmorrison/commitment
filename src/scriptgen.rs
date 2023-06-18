@@ -40,7 +40,7 @@ pub fn generate_script(task: &Task) -> Result<String> {
     writeln!(s, "set -e")?;
     writeln!(s)?;
 
-    for command in &task.execute {
+    for (idx, command) in task.execute.iter().enumerate() {
         write_instruction!(s, Instruction::ResetLines)?;
 
         let header = format!(">>> {command} <<<");
@@ -51,7 +51,9 @@ pub fn generate_script(task: &Task) -> Result<String> {
 
         write_instruction!(s, Instruction::Command(command.as_str()))?;
 
-        write_instruction!(s, Instruction::LIgnore(""))?;
+        if idx != task.execute.len() - 1 {
+            write_instruction!(s, Instruction::LIgnore(""))?;
+        }
     }
 
     Ok(s)

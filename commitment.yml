@@ -1,11 +1,6 @@
 cargo-build:
   execute:
-    - cargo clean
     - cargo build --color=always
-
-cargo-test:
-  execute:
-    - cargo fmt --check
 
 cargo-fmt:
   execute:

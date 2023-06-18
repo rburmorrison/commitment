@@ -27,7 +27,10 @@ fn main() -> Result<()> {
     let file = File::open(args.config)?;
     let config = serde_yaml::from_reader(file)?;
 
-    interpreter::interpret(&config)?;
-
-    Ok(())
+    if let Err(err) = interpreter::interpret(&config) {
+        println!();
+        Err(err)
+    } else {
+        Ok(())
+    }
 }
