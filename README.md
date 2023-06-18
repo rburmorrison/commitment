@@ -1,6 +1,7 @@
 # Commitment
 
-[![crates.io](https://img.shields.io/crates/v/commitment.svg)](https://crates.io/crates/commitment)
+[![Crates.io](https://img.shields.io/crates/v/commitment.svg)](https://crates.io/crates/commitment)
+![Crates.io](https://img.shields.io/crates/l/commitment)
 
 Simplify your Git pre-commit hooks.
 
