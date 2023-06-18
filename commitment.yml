@@ -1,14 +1,7 @@
-normal-prints:
-  execute:
-    - echo "Hello, world!"
-    - sleep 2
-    - echo "Hello, there!"
-    - sleep 2
-
 cargo-build:
   execute:
     - cargo clean
-    - cargo build
+    - cargo build --color=always
 
 cargo-test:
   execute:
@@ -20,4 +13,4 @@ cargo-fmt:
 
 cargo-clippy:
   execute:
-    - cargo clippy -- -D warnings
+    - cargo clippy --color=always -- -D warnings

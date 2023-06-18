@@ -1,5 +1,8 @@
 use std::{
-    io::{stderr, stdout, BufRead, BufReader},
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+    io::{stderr, stdout, BufRead, BufReader, Write},
+    path::Path,
     process::{Command, Stdio},
     sync::mpsc,
     thread,
@@ -8,7 +11,12 @@ use std::{
 use anyhow::Result;
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor};
 
-use crate::{config::Config, parsing::parse_command};
+use crate::{
+    config::{Config, Task},
+    defs::APP_DATA_DIR,
+    scriptgen::generate_script,
+    temp::TFile,
+};
 
 fn draw_box<S: AsRef<str>>(input: S) {
     let input = input.as_ref();
@@ -50,12 +58,19 @@ impl Output {
 
         Ok(())
     }
+
+    const fn data(&self) -> &String {
+        match self {
+            Self::Stdout(data) | Self::Stderr(data) => data,
+        }
+    }
 }
 
-fn run_command<S: AsRef<str>>(command: S) -> Result<()> {
-    let (exe, args) = parse_command(command.as_ref())?;
-    let mut process = Command::new(exe)
-        .args(args)
+fn run_script<P: AsRef<Path>>(path: P) -> Result<()> {
+    let path = path.as_ref();
+
+    let mut process = Command::new("bash")
+        .arg(path.to_str().unwrap())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
@@ -90,35 +105,50 @@ fn run_command<S: AsRef<str>>(command: S) -> Result<()> {
 
     let mut count = 1;
     while let Ok(output) = rx.recv() {
-        output.print(count)?;
-        count += 1;
+        let data = output.data();
+        if let Some(data) = data.strip_prefix("CMT-LIGNORE:") {
+            println!("{data}");
+        } else if data.as_str() == "CMT-RESET_LINES:" {
+            count = 1;
+        } else {
+            output.print(count)?;
+            count += 1;
+        }
     }
 
     stdout_thread.join().unwrap()?;
     stderr_thread.join().unwrap()?;
 
-    let result = process.wait()?;
-    println!("Status Code: {}", result.code().unwrap());
-
     Ok(())
+}
+
+/// Create a script on the file system.
+fn create_script<S: AsRef<str>>(name: S, task: &Task) -> Result<TFile> {
+    let name = name.as_ref();
+
+    let mut hasher = DefaultHasher::new();
+    name.hash(&mut hasher);
+    let name_hash = hasher.finish();
+
+    let path = format!("commitment-{name_hash}.tmp");
+    let path = APP_DATA_DIR.join(path);
+
+    let mut tfile = TFile::new(path)?;
+    let script = generate_script(task)?;
+
+    tfile.file.write_all(script.as_bytes())?;
+
+    Ok(tfile)
 }
 
 /// Execute the commitment file.
 pub fn interpret(config: &Config) -> Result<()> {
-    for (key, value) in &config.tasks {
-        draw_box(format!("TASK: {key}"));
+    for (name, task) in &config.tasks {
+        draw_box(format!("TASK: {name}"));
         println!();
 
-        for command in &value.execute {
-            println!(">>> {command} <<<");
-            println!("{}", "─".repeat(command.len() + 8));
-
-            run_command(command)?;
-
-            println!();
-        }
-
-        println!();
+        let script = create_script(name, task)?;
+        run_script(&script.path)?;
     }
 
     Ok(())

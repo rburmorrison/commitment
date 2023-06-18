@@ -4,10 +4,13 @@ use std::{fs::File, path::PathBuf};
 
 use anyhow::Result;
 use clap::Parser;
+use defs::APP_DATA_DIR;
 
 mod config;
+mod defs;
 mod interpreter;
-mod parsing;
+mod scriptgen;
+mod temp;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -17,6 +20,9 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    // Create the application data directory.
+    std::fs::create_dir_all(&*APP_DATA_DIR)?;
+
     let args = Args::parse();
     let file = File::open(args.config)?;
     let config = serde_yaml::from_reader(file)?;
