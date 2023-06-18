@@ -15,7 +15,6 @@ mod temp;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, name = "FILE")]
     config: PathBuf,
 }
 

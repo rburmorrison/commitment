@@ -1,3 +1,5 @@
+#!/usr/bin/env commitment
+
 cargo-build:
   execute:
     - cargo build --color=always
