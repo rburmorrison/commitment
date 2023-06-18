@@ -2,18 +2,37 @@
 
 Simplify your Git pre-commit hooks.
 
+## Usage
+
+> **WARNING**
+> 
+> Commitment files contain arbitrary shell commands. Be cautious when installing
+> a Commitment file and always review first!
+
+To use Commitment, start by creating a `commitment.yml` file in the root
+directory of your project. See the next section for an example.
+
+Commitment files need to be installed before they take effect. To install a
+Commitment file, run `commitment install` in the root of your project.
+
 ## Example Commitment File
 
 ```yaml
-# Set task defaults here. If not specified, reasonable defaults will be set for
-# you.
-defaults:
-  can-fail: false
-
-# This is an example of a task. You can specify as many as you'd like.
-cargo-clippy:
-
-  # Define the steps it takes for this task to complete here.
+# Tasks are defined below. They run sequentially. If one fails, the following
+# tasks are skipped and Commitment returns an error code.
+ 
+cargo-build:
+  # This must be defined for every task. Multiple commands can be specified and
+  # will be executed within the same shell session. This means you can change
+  # directories and run commands there.
   execute:
-    - cargo clippy -- -D warnings
+    - cargo build --color=always
+
+cargo-fmt:
+  execute:
+    - cargo fmt --check
+
+cargo-clippy:
+  execute:
+    - cargo clippy --color=always -- -D warnings
 ```
