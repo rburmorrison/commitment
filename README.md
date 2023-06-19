@@ -55,7 +55,7 @@ After all tasks are executed, the results will be displayed like this:
 ╚═══════════════════════════╝
 
  cargo-build....................SUCCESS
-   cargo-fmt....................IGNORED
+   cargo-fmt....................SKIPPED
 cargo-clippy....................SUCCESS
 
 PASSED: 2/3 (66.67%)
@@ -67,5 +67,5 @@ Possible statuses are:
 |-------------|------------------------------------------------|
 | SUCCESS     | The task finished without errors               |
 | FAILURE     | The task failed to complete                    |
-| IGNORED     | The task failed, but was `can-fail` was `true` |
-| SKIPPED     | A previous task has failed and this wasn't run |
+| SKIPPED     | The task failed, but `can-fail` was `true`     |
+| IGNORED     | A previous task has failed and this wasn't run |

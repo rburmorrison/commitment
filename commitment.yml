@@ -9,3 +9,8 @@ cargo-fmt:
 cargo-clippy:
   execute:
     - cargo clippy --color=always -- -D warnings
+
+cargo-audit:
+  can-fail: true
+  execute:
+    - cargo audit

@@ -166,7 +166,7 @@ enum TaskResult {
     Failure,
 
     // The task failed, but it was failable.
-    Ignored,
+    Skipped,
 }
 
 fn display_results(results: &IndexMap<String, Option<TaskResult>>) {
@@ -186,14 +186,14 @@ fn display_results(results: &IndexMap<String, Option<TaskResult>>) {
             .on_blue();
 
         let result = result.map_or_else(
-            || "SKIPPED".black().on_yellow(),
+            || "IGNORED".black().on_grey(),
             |result| match result {
                 TaskResult::Success => {
                     successes += 1;
                     "SUCCESS".black().on_green()
                 }
                 TaskResult::Failure => "FAILURE".black().on_red(),
-                TaskResult::Ignored => "IGNORED".black().on_grey(),
+                TaskResult::Skipped => "SKIPPED".black().on_yellow(),
             },
         );
 
@@ -223,7 +223,7 @@ pub fn interpret(config: &Config) -> Result<()> {
 
         let result = execute_task(task)?;
         let result = if !result.success() && task.can_fail {
-            TaskResult::Ignored
+            TaskResult::Skipped
         } else if result.success() {
             TaskResult::Success
         } else {
