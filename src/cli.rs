@@ -4,7 +4,7 @@ use clap::Parser;
 mod execute;
 mod install;
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
