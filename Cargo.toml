@@ -5,7 +5,6 @@ edition = "2021"
 authors = ["Ryan Burmeister-Morrison"]
 description = "Simplify your Git pre-commit hooks"
 license = "GPL-3.0-or-later"
-license-file = "LICENSE.txt"
 homepage = "https://github.com/rburmorrison/commitment"
 repository = "https://github.com/rburmorrison/commitment"
 
