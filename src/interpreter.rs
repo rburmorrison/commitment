@@ -1,9 +1,6 @@
 use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
     io::{stderr, stdout, BufRead, BufReader, Write},
-    path::Path,
-    process::{Command, ExitStatus, Stdio},
+    process::{ChildStdin, Command, ExitStatus, Stdio},
     sync::mpsc,
     thread,
 };
@@ -13,12 +10,7 @@ use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
 use indexmap::IndexMap;
 use thiserror::Error;
 
-use crate::{
-    config::{Config, Task},
-    defs::APP_DATA_DIR,
-    scriptgen::generate_script,
-    temp::TFile,
-};
+use crate::config::{Config, Task};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -83,11 +75,33 @@ impl Output {
     }
 }
 
-fn run_script<P: AsRef<Path>>(path: P) -> Result<ExitStatus> {
-    let path = path.as_ref();
+/// Send commands to stdin and exit.
+///
+/// Certain directives are specified in echo statements that change the behavior
+/// of the output. Directives are:
+///
+/// - `CMT-LIGNORE` - Don't print the line number along with the line.
+/// - `CMT-RESET_LINES` - Reset the line number counter
+fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> Result<()> {
+    writeln!(stdin, "set -e")?;
+    for (idx, step) in task.execute.iter().enumerate() {
+        writeln!(stdin, "echo 'CMT-RESET_LINES:'")?;
+        writeln!(stdin, "echo 'CMT-LIGNORE:>>> {step} <<<'")?;
+        writeln!(stdin, "echo 'CMT-LIGNORE:{}'", "-".repeat(step.len() + 8))?;
+        writeln!(stdin, "{step}")?;
 
-    let mut process = Command::new("bash")
-        .arg(path.to_str().unwrap())
+        if idx != task.execute.len() - 1 {
+            writeln!(stdin, "echo 'CMT-LIGNORE:'")?;
+        }
+    }
+    writeln!(stdin, "exit")?;
+
+    Ok(())
+}
+
+fn execute_task(task: &Task) -> Result<ExitStatus> {
+    let mut process = Command::new("sh")
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
@@ -120,6 +134,9 @@ fn run_script<P: AsRef<Path>>(path: P) -> Result<ExitStatus> {
         Ok::<(), anyhow::Error>(())
     });
 
+    let stdin = process.stdin.as_mut().expect("failed to access stdin");
+    inject_steps(task, stdin)?;
+
     let mut count = 1;
     while let Ok(output) = rx.recv() {
         let data = output.data();
@@ -139,49 +156,7 @@ fn run_script<P: AsRef<Path>>(path: P) -> Result<ExitStatus> {
     Ok(process.wait()?)
 }
 
-/// Create a generated script on the file system for the given task.
-fn create_script<S: AsRef<str>>(name: S, task: &Task) -> Result<TFile> {
-    let name = name.as_ref();
-
-    let mut hasher = DefaultHasher::new();
-    name.hash(&mut hasher);
-    let name_hash = hasher.finish();
-
-    let path = format!("commitment-{name_hash}.tmp");
-    let path = APP_DATA_DIR.join(path);
-
-    let mut tfile = TFile::new(path)?;
-    let script = generate_script(task)?;
-
-    tfile.file.write_all(script.as_bytes())?;
-
-    Ok(tfile)
-}
-
-/// Execute the commitment file.
-pub fn interpret(config: &Config) -> Result<()> {
-    let mut results: IndexMap<String, Option<ExitStatus>> = IndexMap::new();
-
-    for (name, _) in &config.tasks {
-        results.insert(name.clone(), None);
-    }
-
-    for (name, task) in &config.tasks {
-        draw_box(format!("TASK: {name}"));
-        println!();
-
-        let script = create_script(name, task)?;
-        let result = run_script(&script.path)?;
-
-        results.insert(name.clone(), Some(result));
-
-        println!();
-
-        if !result.success() {
-            break;
-        }
-    }
-
+fn display_results(results: &IndexMap<String, Option<ExitStatus>>) {
     draw_thick_box("RESULTS");
     println!();
 
@@ -192,7 +167,7 @@ pub fn interpret(config: &Config) -> Result<()> {
         .unwrap_or_default();
 
     let mut successes = 0;
-    for (name, result) in &results {
+    for (name, result) in results {
         let colored_block = format!("{}{name}", " ".repeat(longest_name - name.len()))
             .black()
             .on_blue();
@@ -212,13 +187,38 @@ pub fn interpret(config: &Config) -> Result<()> {
         println!("{colored_block:>longest_name$}....................{result}");
     }
 
-    let tasks_count = config.tasks.len();
+    let tasks_count = results.len();
 
     #[allow(clippy::cast_precision_loss)]
     let pass_percent = (successes as f32) / (tasks_count as f32) * 100.0;
 
     println!();
     println!("PASSED: {successes}/{tasks_count} ({pass_percent:.2}%)",);
+}
+
+/// Execute the commitment file.
+pub fn interpret(config: &Config) -> Result<()> {
+    let mut results: IndexMap<String, Option<ExitStatus>> = IndexMap::new();
+
+    for (name, _) in &config.tasks {
+        results.insert(name.clone(), None);
+    }
+
+    for (name, task) in &config.tasks {
+        draw_box(format!("TASK: {name}"));
+        println!();
+
+        let result = execute_task(task)?;
+        results.insert(name.clone(), Some(result));
+
+        println!();
+
+        if !result.success() {
+            break;
+        }
+    }
+
+    display_results(&results);
 
     for (name, result) in results {
         if let Some(result) = result {

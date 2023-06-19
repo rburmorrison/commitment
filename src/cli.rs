@@ -1,3 +1,5 @@
+//! The entrypoint for argument parsing and subcommand execution.
+
 use anyhow::Result;
 use clap::Parser;
 

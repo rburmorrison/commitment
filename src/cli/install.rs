@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, os::unix::prelude::PermissionsExt};
+use std::{fs::File, io::Write, os::unix::prelude::PermissionsExt, path::Path};
 
 use anyhow::{bail, Result};
 use thiserror::Error;
@@ -22,6 +22,20 @@ pub struct Args {
     force: bool,
 }
 
+fn install_script(path: &Path) -> Result<()> {
+    let mut f = File::create(path)?;
+    writeln!(f, "#!/bin/env sh")?;
+    writeln!(f)?;
+    writeln!(f, "commitment execute commitment.yml")?;
+
+    let mut permissions = f.metadata()?.permissions();
+    permissions.set_mode(0o755);
+
+    std::fs::set_permissions(path, permissions)?;
+
+    Ok(())
+}
+
 pub fn execute(args: Args) -> Result<()> {
     let cwd = std::env::current_dir()?;
 
@@ -40,15 +54,7 @@ pub fn execute(args: Args) -> Result<()> {
         bail!(Error::HookExists);
     }
 
-    let mut f = File::create(&pre_commit_path)?;
-    writeln!(f, "#!/bin/env sh")?;
-    writeln!(f)?;
-    writeln!(f, "commitment execute commitment.yml")?;
-
-    let mut permissions = f.metadata()?.permissions();
-    permissions.set_mode(0o755);
-
-    std::fs::set_permissions(pre_commit_path, permissions)?;
+    install_script(pre_commit_path.as_path())?;
 
     Ok(())
 }
