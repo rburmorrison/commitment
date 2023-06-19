@@ -11,8 +11,6 @@ cargo-clippy:
     - cargo clippy --color=always -- -D warnings
 
 cargo-audit:
-  # Setting this to true will allow following tasks to continue and won't reject
-  # the commit.
   can-fail: true
   execute:
     - cargo audit
