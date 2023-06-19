@@ -156,7 +156,20 @@ fn execute_task(task: &Task) -> Result<ExitStatus> {
     Ok(process.wait()?)
 }
 
-fn display_results(results: &IndexMap<String, Option<ExitStatus>>) {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The outcome of a task.
+enum TaskResult {
+    /// The task was fully successful.
+    Success,
+
+    /// The task failed to complete.
+    Failure,
+
+    // The task failed, but it was failable.
+    Ignored,
+}
+
+fn display_results(results: &IndexMap<String, Option<TaskResult>>) {
     draw_thick_box("RESULTS");
     println!();
 
@@ -174,13 +187,13 @@ fn display_results(results: &IndexMap<String, Option<ExitStatus>>) {
 
         let result = result.map_or_else(
             || "SKIPPED".black().on_yellow(),
-            |result| {
-                if result.success() {
+            |result| match result {
+                TaskResult::Success => {
                     successes += 1;
                     "SUCCESS".black().on_green()
-                } else {
-                    "FAILURE".black().on_red()
                 }
+                TaskResult::Failure => "FAILURE".black().on_red(),
+                TaskResult::Ignored => "IGNORED".black().on_grey(),
             },
         );
 
@@ -198,7 +211,7 @@ fn display_results(results: &IndexMap<String, Option<ExitStatus>>) {
 
 /// Execute the commitment file.
 pub fn interpret(config: &Config) -> Result<()> {
-    let mut results: IndexMap<String, Option<ExitStatus>> = IndexMap::new();
+    let mut results: IndexMap<String, Option<TaskResult>> = IndexMap::new();
 
     for (name, _) in &config.tasks {
         results.insert(name.clone(), None);
@@ -209,11 +222,19 @@ pub fn interpret(config: &Config) -> Result<()> {
         println!();
 
         let result = execute_task(task)?;
+        let result = if !result.success() && task.can_fail {
+            TaskResult::Ignored
+        } else if result.success() {
+            TaskResult::Success
+        } else {
+            TaskResult::Failure
+        };
+
         results.insert(name.clone(), Some(result));
 
         println!();
 
-        if !result.success() {
+        if result == TaskResult::Failure {
             break;
         }
     }
@@ -222,7 +243,7 @@ pub fn interpret(config: &Config) -> Result<()> {
 
     for (name, result) in results {
         if let Some(result) = result {
-            if !result.success() {
+            if result == TaskResult::Failure {
                 bail!(Error::TaskFailed(name));
             }
         }

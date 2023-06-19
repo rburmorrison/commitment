@@ -39,3 +39,33 @@ cargo-clippy:
   execute:
     - cargo clippy --color=always -- -D warnings
 ```
+
+## Output
+
+When Commitment executes a file each task and command within the task will be
+output. For the commands themselves, the `stdout` and `stderr` will be displayed
+as the command runs with line numbers. Line numbers colored in red mean that
+that line came from `stderr`.
+
+After all tasks are executed, the results will be displayed like this:
+
+```
+╔═══════════════════════════╗
+║          RESULTS          ║
+╚═══════════════════════════╝
+
+ cargo-build....................SUCCESS
+   cargo-fmt....................IGNORED
+cargo-clippy....................SUCCESS
+
+PASSED: 2/3 (66.67%)
+```
+
+Possible statuses are:
+
+| **Status**  | **Description**                                |
+|-------------|------------------------------------------------|
+| SUCCESS     | The task finished without errors               |
+| FAILURE     | The task failed to complete                    |
+| IGNORED     | The task failed, but was `can-fail` was `true` |
+| SKIPPED     | A previous task has failed and this wasn't run |

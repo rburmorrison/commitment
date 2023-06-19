@@ -17,7 +17,7 @@ struct Cli {
 enum Command {
     /// Run a commitment file.
     ///
-    /// This is primarily used for the pre-commit hook itself.
+    /// This can be used to test the commitment file before installing it.
     Execute(execute::Args),
 
     /// Install the pre-commit hook to run the commitment file.
