@@ -38,4 +38,41 @@ cargo-fmt:
 cargo-clippy:
   execute:
     - cargo clippy --color=always -- -D warnings
+
+cargo-audit:
+  # Setting this to true will allow following tasks to continue and won't reject
+  # the commit.
+  can-fail: true
+  execute:
+    - cargo audit
 ```
+
+## Output
+
+When Commitment executes a file each task and command within the task will be
+output. For the commands themselves, the `stdout` and `stderr` will be displayed
+as the command runs with line numbers. Line numbers colored in red mean that
+that line came from `stderr`.
+
+After all tasks are executed, the results will be displayed like this:
+
+```
+╔═══════════════════════════╗
+║          RESULTS          ║
+╚═══════════════════════════╝
+
+ cargo-build....................SUCCESS
+   cargo-fmt....................SKIPPED
+cargo-clippy....................SUCCESS
+
+PASSED: 2/3 (66.67%)
+```
+
+Possible statuses are:
+
+| **Status**  | **Description**                                |
+|-------------|------------------------------------------------|
+| SUCCESS     | The task finished without errors               |
+| FAILURE     | The task failed to complete                    |
+| SKIPPED     | The task failed, but `can-fail` was `true`     |
+| IGNORED     | A previous task has failed and this wasn't run |
