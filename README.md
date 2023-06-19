@@ -3,6 +3,10 @@
 [![Crates.io](https://img.shields.io/crates/v/commitment.svg)](https://crates.io/crates/commitment)
 [![Crates.io](https://img.shields.io/crates/l/commitment)](./LICENSE.txt)
 
+<p align="center">
+  <img src="assets/gifs/example.gif" alt="Commitment Example" />
+</p>
+
 Simplify your Git pre-commit hooks.
 
 ## Usage

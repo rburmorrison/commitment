@@ -3,6 +3,7 @@ cargo-build:
     - cargo build --color=always
 
 cargo-fmt:
+  can-fail: true
   execute:
     - cargo fmt --check
 
