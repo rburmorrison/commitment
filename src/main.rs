@@ -16,8 +16,7 @@ fn main() -> Result<()> {
                 println!();
                 bail!(err);
             }
-            Some(_) => bail!(err),
-            None => bail!(err),
+            Some(_) | None => bail!(err),
         }
     }
 

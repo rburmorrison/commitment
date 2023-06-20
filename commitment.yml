@@ -4,8 +4,7 @@ cargo-build:
 
 cargo-fmt:
   restage:
-    extensions:
-      - rs
+    extensions: ["rs"]
   execute:
     - cargo fmt
 

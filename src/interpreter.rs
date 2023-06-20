@@ -8,6 +8,7 @@ use std::{
 use anyhow::{bail, Result};
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
 use indexmap::IndexMap;
+use nom::{bytes::complete::take_while1, combinator::all_consuming};
 use thiserror::Error;
 
 use crate::config::{Config, Restage, Task};
@@ -25,6 +26,10 @@ pub enum Error {
     #[error("failed to restage files")]
     /// Occurs when `git add` fails.
     Restage,
+
+    #[error(r#"invalid extension "{0}""#)]
+    /// Occurs when `git add` fails.
+    InvalidExtension(String),
 }
 
 fn draw_box<S: AsRef<str>>(input: S) {
@@ -107,9 +112,24 @@ fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> Result<()> {
     Ok(())
 }
 
+fn valid_extension(input: &str) -> bool {
+    let result =
+        all_consuming::<&str, &str, nom::error::Error<&str>, _>(take_while1(|ch: char| {
+            ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
+        }))(input);
+
+    result.is_ok()
+}
+
 fn restage_files(restage: &Restage) -> Result<()> {
     if restage.extensions.is_empty() {
         return Ok(());
+    }
+
+    for extension in &restage.extensions {
+        if !valid_extension(extension) {
+            bail!(Error::InvalidExtension(extension.clone()));
+        }
     }
 
     // Find all files that have been staged.
@@ -127,8 +147,15 @@ fn restage_files(restage: &Restage) -> Result<()> {
     }
 
     let output = String::from_utf8(output.stdout)?;
-    let output = output.trim();
-    let files = output.split('\n').collect::<Vec<&str>>();
+    let files = output
+        .split('\n')
+        .filter(|file| !file.is_empty())
+        .collect::<Vec<&str>>();
+
+    // Return early if there's nothing to add.
+    if files.is_empty() {
+        return Ok(());
+    }
 
     // Restage all found files.
     let status = Command::new("git").arg("add").args(files).status()?;
@@ -259,7 +286,7 @@ fn display_results(results: &IndexMap<String, Option<TaskResult>>) {
 pub fn interpret(config: &Config) -> Result<()> {
     let mut results: IndexMap<String, Option<TaskResult>> = IndexMap::new();
 
-    for (name, _) in &config.tasks {
+    for name in config.tasks.keys() {
         results.insert(name.clone(), None);
     }
 
