@@ -8,15 +8,28 @@ use std::{
 use anyhow::{bail, Result};
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
 use indexmap::IndexMap;
+use nom::{bytes::complete::take_while1, combinator::all_consuming};
 use thiserror::Error;
 
-use crate::config::{Config, Task};
+use crate::config::{Config, Restage, Task};
 
 #[derive(Debug, Error)]
 pub enum Error {
     /// Occurs when a task returns a non-zero error code.
     #[error(r#"task "{0}" returned a non-zero exit code"#)]
     TaskFailed(String),
+
+    #[error("failed to detect staged files")]
+    /// Occurs when `git diff` can't be run.
+    GitDiff,
+
+    #[error("failed to restage files")]
+    /// Occurs when `git add` fails.
+    Restage,
+
+    #[error(r#"invalid extension "{0}""#)]
+    /// Occurs when `git add` fails.
+    InvalidExtension(String),
 }
 
 fn draw_box<S: AsRef<str>>(input: S) {
@@ -99,6 +112,60 @@ fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> Result<()> {
     Ok(())
 }
 
+fn valid_extension(input: &str) -> bool {
+    let result =
+        all_consuming::<&str, &str, nom::error::Error<&str>, _>(take_while1(|ch: char| {
+            ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
+        }))(input);
+
+    result.is_ok()
+}
+
+fn restage_files(restage: &Restage) -> Result<()> {
+    if restage.extensions.is_empty() {
+        return Ok(());
+    }
+
+    for extension in &restage.extensions {
+        if !valid_extension(extension) {
+            bail!(Error::InvalidExtension(extension.clone()));
+        }
+    }
+
+    // Find all files that have been staged.
+    let mut command = Command::new("git");
+    command.args(["diff", "--cached", "--diff-filter=ACM", "--name-only", "--"]);
+
+    // Filter by file extensions.
+    for extension in &restage.extensions {
+        command.arg(format!("*.{extension}").as_str());
+    }
+
+    let output = command.output()?;
+    if !output.status.success() {
+        bail!(Error::GitDiff);
+    }
+
+    let output = String::from_utf8(output.stdout)?;
+    let files = output
+        .split('\n')
+        .filter(|file| !file.is_empty())
+        .collect::<Vec<&str>>();
+
+    // Return early if there's nothing to add.
+    if files.is_empty() {
+        return Ok(());
+    }
+
+    // Restage all found files.
+    let status = Command::new("git").arg("add").args(files).status()?;
+    if !status.success() {
+        bail!(Error::Restage);
+    }
+
+    Ok(())
+}
+
 fn execute_task(task: &Task) -> Result<ExitStatus> {
     let mut process = Command::new("sh")
         .stdin(Stdio::piped())
@@ -153,7 +220,13 @@ fn execute_task(task: &Task) -> Result<ExitStatus> {
     stdout_thread.join().unwrap()?;
     stderr_thread.join().unwrap()?;
 
-    Ok(process.wait()?)
+    let exit_status = process.wait()?;
+
+    if let Some(restage) = &task.restage {
+        restage_files(restage)?;
+    }
+
+    Ok(exit_status)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -213,7 +286,7 @@ fn display_results(results: &IndexMap<String, Option<TaskResult>>) {
 pub fn interpret(config: &Config) -> Result<()> {
     let mut results: IndexMap<String, Option<TaskResult>> = IndexMap::new();
 
-    for (name, _) in &config.tasks {
+    for name in config.tasks.keys() {
         results.insert(name.clone(), None);
     }
 

@@ -36,6 +36,11 @@ cargo-build:
     - cargo build --color=always
 
 cargo-fmt:
+  # When present, files with the matching extension will be restaged before
+  # the commit is made. In this case, it's used to auto-format the code before
+  # each commit.
+  restage:
+    extensions: ["rs"]
   execute:
     - cargo fmt --check
 
