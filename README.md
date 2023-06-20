@@ -29,9 +29,6 @@ Commitment file, run `commitment install` in the root of your project.
 # tasks are skipped and Commitment returns an error code.
  
 cargo-build:
-  restage:
-    extensions: ["toml", "lock"]
-
   # This must be defined for every task. Multiple commands can be specified and
   # will be executed within the same shell session. This means you can change
   # directories and run commands there.
@@ -45,7 +42,7 @@ cargo-fmt:
   restage:
     extensions: ["rs"]
   execute:
-    - cargo fmt --check
+    - cargo fmt
 
 cargo-clippy:
   execute:

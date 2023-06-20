@@ -1,6 +1,4 @@
 cargo-build:
-  restage:
-    extensions: ["toml", "lock"]
   execute:
     - cargo build --color=always
 
