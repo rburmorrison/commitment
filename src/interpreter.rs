@@ -100,7 +100,7 @@ fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> Result<()> {
     for (idx, step) in task.execute.iter().enumerate() {
         writeln!(stdin, "echo 'CMT-RESET_LINES:'")?;
         writeln!(stdin, "echo 'CMT-LIGNORE:>>> {step} <<<'")?;
-        writeln!(stdin, "echo 'CMT-LIGNORE:{}'", "-".repeat(step.len() + 8))?;
+        writeln!(stdin, "echo 'CMT-LIGNORE:{}'", "─".repeat(step.len() + 8))?;
         writeln!(stdin, "{step}")?;
 
         if idx != task.execute.len() - 1 {
