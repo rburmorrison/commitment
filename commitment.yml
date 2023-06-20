@@ -3,9 +3,11 @@ cargo-build:
     - cargo build --color=always
 
 cargo-fmt:
-  can-fail: true
+  restage:
+    extensions:
+      - rs
   execute:
-    - cargo fmt --check
+    - cargo fmt
 
 cargo-clippy:
   execute:
