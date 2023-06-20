@@ -28,7 +28,7 @@ pub fn execute() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Execute(args) => execute::execute(args),
-        Command::Install(args) => install::execute(args),
+        Command::Execute(args) => execute::execute(&args),
+        Command::Install(args) => install::execute(&args),
     }
 }

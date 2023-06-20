@@ -11,8 +11,8 @@ pub struct Args {
     config: PathBuf,
 }
 
-pub fn execute(args: Args) -> Result<()> {
-    let file = File::open(args.config)?;
+pub fn execute(args: &Args) -> Result<()> {
+    let file = File::open(&args.config)?;
     let config = serde_yaml::from_reader(file)?;
 
     if let Err(err) = interpreter::interpret(&config) {
