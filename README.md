@@ -71,10 +71,11 @@ After all tasks are executed, the results will be displayed like this:
 ╚═══════════════════════════╝
 
  cargo-build....................SUCCESS
-   cargo-fmt....................SKIPPED
+   cargo-fmt....................SUCCESS
 cargo-clippy....................SUCCESS
+ cargo-audit....................SKIPPED
 
-PASSED: 2/3 (66.67%)
+PASSED: 3/4 (75.00%)
 ```
 
 Possible statuses are:
