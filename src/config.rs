@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Restage {
+    #[serde(default, rename = "allow-any")]
+    pub allow_any: bool,
     pub extensions: Vec<String>,
 }
 

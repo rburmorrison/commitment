@@ -1,5 +1,6 @@
 use std::{
     io::{stderr, stdout, BufRead, BufReader, Write},
+    path::PathBuf,
     process::{ChildStdin, Command, ExitStatus, Stdio},
     sync::mpsc,
     thread,
@@ -7,6 +8,7 @@ use std::{
 
 use anyhow::{bail, Result};
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
+use glob::glob;
 use indexmap::IndexMap;
 use nom::{bytes::complete::take_while1, combinator::all_consuming};
 use thiserror::Error;
@@ -126,19 +128,25 @@ fn restage_files(restage: &Restage) -> Result<()> {
         return Ok(());
     }
 
+    let mut restage_list = vec![];
+
     for extension in &restage.extensions {
+        println!("EXTENSION: {extension}");
         if !valid_extension(extension) {
             bail!(Error::InvalidExtension(extension.clone()));
         }
+
+        for path in glob(format!("**/*.{extension}").as_str())? {
+            let path = path?;
+            restage_list.push(path);
+        }
     }
 
-    // Find all files that have been staged.
     let mut command = Command::new("git");
-    command.args(["diff", "--cached", "--diff-filter=ACM", "--name-only", "--"]);
-
-    // Filter by file extensions.
-    for extension in &restage.extensions {
-        command.arg(format!("*.{extension}").as_str());
+    if restage.allow_any {
+        command.args(["ls-files", "--cached", "--others", "--exclude-standard"]);
+    } else {
+        command.args(["diff", "--cached", "--diff-filter=ACM", "--name-only"]);
     }
 
     let output = command.output()?;
@@ -147,18 +155,27 @@ fn restage_files(restage: &Restage) -> Result<()> {
     }
 
     let output = String::from_utf8(output.stdout)?;
-    let files = output
+    let allowed_files = output
         .split('\n')
         .filter(|file| !file.is_empty())
-        .collect::<Vec<&str>>();
+        .map(PathBuf::from)
+        .collect::<Vec<PathBuf>>();
 
     // Return early if there's nothing to add.
-    if files.is_empty() {
+    if allowed_files.is_empty() {
         return Ok(());
     }
 
+    restage_list.retain(|item| allowed_files.contains(item));
+
+    println!("{restage_list:?}");
+
     // Restage all found files.
-    let status = Command::new("git").arg("add").args(files).status()?;
+    let args = restage_list
+        .into_iter()
+        .map(|item| item.display().to_string());
+
+    let status = Command::new("git").arg("add").args(args).status()?;
     if !status.success() {
         bail!(Error::Restage);
     }
