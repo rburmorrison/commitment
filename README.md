@@ -29,6 +29,18 @@ Commitment file, run `commitment install` in the root of your project.
 # tasks are skipped and Commitment returns an error code.
  
 cargo-build:
+  # You can specify file globs to determine what should be restaged after the
+  # task has succeeded. File globs can be specific file paths or patterns such
+  # as `*.rs` or `docs/**/*.md`.
+  restage:
+    # If this is false, only files that were previously staged will be restaged.
+    # Otherwise any file, wether staged or not will be staged after the task
+    # has succeeded.
+    allow-any: true
+    globs:
+      - Cargo.toml
+      - Cargo.lock
+
   # This must be defined for every task. Multiple commands can be specified and
   # will be executed within the same shell session. This means you can change
   # directories and run commands there.
