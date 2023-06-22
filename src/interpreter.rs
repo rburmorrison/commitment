@@ -131,7 +131,6 @@ fn restage_files(restage: &Restage) -> Result<()> {
     let mut restage_list = vec![];
 
     for extension in &restage.extensions {
-        println!("EXTENSION: {extension}");
         if !valid_extension(extension) {
             bail!(Error::InvalidExtension(extension.clone()));
         }
@@ -167,8 +166,6 @@ fn restage_files(restage: &Restage) -> Result<()> {
     }
 
     restage_list.retain(|item| allowed_files.contains(item));
-
-    println!("{restage_list:?}");
 
     // Restage all found files.
     let args = restage_list
