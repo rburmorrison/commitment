@@ -6,6 +6,11 @@ use serde::{Deserialize, Serialize};
 pub struct Restage {
     #[serde(default, rename = "allow-any")]
     pub allow_any: bool,
+
+    #[serde(default)]
+    pub globs: Vec<String>,
+
+    #[serde(default)]
     pub extensions: Vec<String>,
 }
 

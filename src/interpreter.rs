@@ -124,19 +124,23 @@ fn valid_extension(input: &str) -> bool {
 }
 
 fn restage_files(restage: &Restage) -> Result<()> {
-    if restage.extensions.is_empty() {
-        return Ok(());
-    }
-
     let mut restage_list = vec![];
 
+    // Add extensions to restage list.
     for extension in &restage.extensions {
-        println!("EXTENSION: {extension}");
         if !valid_extension(extension) {
             bail!(Error::InvalidExtension(extension.clone()));
         }
 
         for path in glob(format!("**/*.{extension}").as_str())? {
+            let path = path?;
+            restage_list.push(path);
+        }
+    }
+
+    // Add globs to restage list.
+    for pattern in &restage.globs {
+        for path in glob(pattern.as_str())? {
             let path = path?;
             restage_list.push(path);
         }
@@ -168,7 +172,9 @@ fn restage_files(restage: &Restage) -> Result<()> {
 
     restage_list.retain(|item| allowed_files.contains(item));
 
-    println!("{restage_list:?}");
+    if restage_list.is_empty() {
+        return Ok(());
+    }
 
     // Restage all found files.
     let args = restage_list
