@@ -3,11 +3,11 @@
 [![Crates.io](https://img.shields.io/crates/v/commitment.svg)](https://crates.io/crates/commitment)
 [![Crates.io](https://img.shields.io/crates/l/commitment)](./LICENSE.txt)
 
-<p align="center">
+Simplify your Git pre-commit hooks.
+
+<p>
   <img src="assets/gifs/example.gif" alt="Commitment Example" />
 </p>
-
-Simplify your Git pre-commit hooks.
 
 ## Usage
 
@@ -70,10 +70,8 @@ cargo-audit:
 
 ## Output
 
-When Commitment executes a file each task and command within the task will be
-output. For the commands themselves, the `stdout` and `stderr` will be displayed
-as the command runs with line numbers. Line numbers colored in red mean that
-that line came from `stderr`.
+Output from `stdout` and `sterr` is displayed as commands are executed. Line
+numbers colored in red mean that the line came from `stderr`.
 
 After all tasks are executed, the results will be displayed like this:
 
