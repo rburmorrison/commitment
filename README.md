@@ -5,9 +5,7 @@
 
 Simplify your Git pre-commit hooks.
 
-<p>
-  <img src="assets/gifs/example.gif" alt="Commitment Example" />
-</p>
+![Example Video](assets/gifs/example.gif)
 
 ## Usage
 
