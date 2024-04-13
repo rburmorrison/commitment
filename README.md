@@ -32,7 +32,7 @@ cargo-build:
   # as `*.rs` or `docs/**/*.md`.
   restage:
     # If this is false, only files that were previously staged will be restaged.
-    # Otherwise any file, wether staged or not will be staged after the task
+    # Otherwise any file, whether staged or not will be staged after the task
     # has succeeded.
     allow-any: true
     globs:
