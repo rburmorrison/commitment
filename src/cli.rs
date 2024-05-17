@@ -1,6 +1,5 @@
 //! The entrypoint for argument parsing and subcommand execution.
 
-use anyhow::Result;
 use clap::Parser;
 
 mod execute;
@@ -24,7 +23,7 @@ enum Command {
     Install(install::Args),
 }
 
-pub fn execute() -> Result<()> {
+pub fn execute() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {

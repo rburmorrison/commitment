@@ -6,33 +6,12 @@ use std::{
     thread,
 };
 
-use anyhow::{bail, Result};
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
 use glob::glob;
 use indexmap::IndexMap;
 use nom::{bytes::complete::take_while1, combinator::all_consuming};
-use thiserror::Error;
 
 use crate::config::{Config, Restage, Task};
-
-#[derive(Debug, Error)]
-pub enum Error {
-    /// Occurs when a task returns a non-zero error code.
-    #[error(r#"task "{0}" returned a non-zero exit code"#)]
-    TaskFailed(String),
-
-    #[error("failed to detect staged files")]
-    /// Occurs when `git diff` can't be run.
-    GitDiff,
-
-    #[error("failed to restage files")]
-    /// Occurs when `git add` fails.
-    Restage,
-
-    #[error(r#"invalid extension "{0}""#)]
-    /// Occurs when `git add` fails.
-    InvalidExtension(String),
-}
 
 fn draw_box<S: AsRef<str>>(input: S) {
     let input = input.as_ref();
@@ -56,7 +35,7 @@ enum Output {
 }
 
 impl Output {
-    fn print(&self, line_number: usize) -> Result<()> {
+    fn print(&self, line_number: usize) -> anyhow::Result<()> {
         let line_number = format!("{line_number:04}: ");
 
         match self {
@@ -97,7 +76,7 @@ impl Output {
 ///
 /// - `CMT-LIGNORE` - Don't print the line number along with the line.
 /// - `CMT-RESET_LINES` - Reset the line number counter
-fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> Result<()> {
+fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> anyhow::Result<()> {
     writeln!(stdin, "set -e")?;
     for (idx, step) in task.execute.iter().enumerate() {
         writeln!(stdin, "echo 'CMT-RESET_LINES:'")?;
@@ -123,13 +102,13 @@ fn valid_extension(input: &str) -> bool {
     result.is_ok()
 }
 
-fn restage_files(restage: &Restage) -> Result<()> {
+fn restage_files(restage: &Restage) -> anyhow::Result<()> {
     let mut restage_list = vec![];
 
     // Add extensions to restage list.
     for extension in &restage.extensions {
         if !valid_extension(extension) {
-            bail!(Error::InvalidExtension(extension.clone()));
+            anyhow::bail!("Invalid extension: {extension}");
         }
 
         for path in glob(format!("**/*.{extension}").as_str())? {
@@ -155,7 +134,7 @@ fn restage_files(restage: &Restage) -> Result<()> {
 
     let output = command.output()?;
     if !output.status.success() {
-        bail!(Error::GitDiff);
+        anyhow::bail!("Failed to detect staged files");
     }
 
     let output = String::from_utf8(output.stdout)?;
@@ -183,13 +162,13 @@ fn restage_files(restage: &Restage) -> Result<()> {
 
     let status = Command::new("git").arg("add").args(args).status()?;
     if !status.success() {
-        bail!(Error::Restage);
+        anyhow::bail!("Failed to restage files");
     }
 
     Ok(())
 }
 
-fn execute_task(task: &Task) -> Result<ExitStatus> {
+fn execute_task(task: &Task) -> anyhow::Result<ExitStatus> {
     let mut process = Command::new("sh")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -305,8 +284,14 @@ fn display_results(results: &IndexMap<String, Option<TaskResult>>) {
     println!("PASSED: {successes}/{tasks_count} ({pass_percent:.2}%)",);
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InterpretResult {
+    Success,
+    Failure(String),
+}
+
 /// Execute the commitment file.
-pub fn interpret(config: &Config) -> Result<()> {
+pub fn interpret(config: &Config) -> anyhow::Result<InterpretResult> {
     let mut results: IndexMap<String, Option<TaskResult>> = IndexMap::new();
 
     for name in config.tasks.keys() {
@@ -340,10 +325,10 @@ pub fn interpret(config: &Config) -> Result<()> {
     for (name, result) in results {
         if let Some(result) = result {
             if result == TaskResult::Failure {
-                bail!(Error::TaskFailed(name));
+                return Ok(InterpretResult::Failure(name));
             }
         }
     }
 
-    Ok(())
+    Ok(InterpretResult::Success)
 }

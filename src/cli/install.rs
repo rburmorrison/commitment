@@ -5,24 +5,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{bail, Result};
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("a pre-commit hook already exists")]
-    HookExists,
-
-    #[error("failed to detect a git repository")]
-    NotGit,
-
-    #[error("no commitment file")]
-    NoCommitment,
-
-    #[error("commitment file is not within a git repository")]
-    InvalidCommitmentLocation,
-}
-
 #[derive(clap::Args)]
 pub struct Args {
     #[arg(name = "FILE", default_value = "commitment.yml")]
@@ -52,7 +34,7 @@ fn closest_git_root(mut start: PathBuf) -> Option<PathBuf> {
     None
 }
 
-fn install_script(pre_commit_path: &Path, commitment_path: &Path) -> Result<()> {
+fn install_script(pre_commit_path: &Path, commitment_path: &Path) -> anyhow::Result<()> {
     let commitment_path = commitment_path
         .display()
         .to_string()
@@ -72,24 +54,25 @@ fn install_script(pre_commit_path: &Path, commitment_path: &Path) -> Result<()> 
     Ok(())
 }
 
-pub fn execute(args: &Args) -> Result<()> {
-    let git_root = closest_git_root(std::env::current_dir()?).ok_or(Error::NotGit)?;
+pub fn execute(args: &Args) -> anyhow::Result<()> {
+    let git_root = closest_git_root(std::env::current_dir()?)
+        .ok_or_else(|| anyhow::format_err!("Failed to detect a Git root"))?;
 
     let commitment_path = args.config.canonicalize()?;
     if !commitment_path.exists() {
-        bail!(Error::NoCommitment);
+        anyhow::bail!("Commitment file does not exist");
     }
 
     let result = commitment_path.strip_prefix(&git_root);
     if result.is_err() {
-        bail!(Error::InvalidCommitmentLocation);
+        anyhow::bail!("Commitment file must be within a Git repository");
     }
 
     let relative_path = result.unwrap();
 
     let pre_commit_path = git_root.join(".git").join("hooks").join("pre-commit");
     if pre_commit_path.exists() && !args.force {
-        bail!(Error::HookExists);
+        anyhow::bail!("A pre-commit hook already exists. Use --force to overwrite it.");
     }
 
     install_script(&pre_commit_path, relative_path)?;
