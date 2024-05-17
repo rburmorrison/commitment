@@ -203,7 +203,7 @@ fn execute_task(task: &Task) -> anyhow::Result<ExitStatus> {
         Ok::<(), anyhow::Error>(())
     });
 
-    let stdin = process.stdin.as_mut().expect("failed to access stdin");
+    let stdin = process.stdin.as_mut().expect("Failed to access stdin");
     inject_steps(task, stdin)?;
 
     let mut count = 1;
