@@ -57,7 +57,7 @@ impl Output {
                 Print(line),
                 Print("\n")
             )?,
-        };
+        }
 
         Ok(())
     }
