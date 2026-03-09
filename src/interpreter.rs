@@ -9,7 +9,7 @@ use std::{
 use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
 use glob::glob;
 use indexmap::IndexMap;
-use nom::{bytes::complete::take_while1, combinator::all_consuming};
+use nom::{bytes::complete::take_while1, combinator::all_consuming, Parser};
 
 use crate::config::{Config, Restage, Task};
 
@@ -95,9 +95,10 @@ fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> anyhow::Result<()> {
 
 fn valid_extension(input: &str) -> bool {
     let result =
-        all_consuming::<&str, &str, nom::error::Error<&str>, _>(take_while1(|ch: char| {
+        all_consuming::<&str, nom::error::Error<&str>, _>(take_while1(|ch: char| {
             ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
-        }))(input);
+        }))
+        .parse(input);
 
     result.is_ok()
 }
