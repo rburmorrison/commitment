@@ -94,11 +94,10 @@ fn inject_steps(task: &Task, stdin: &mut ChildStdin) -> anyhow::Result<()> {
 }
 
 fn valid_extension(input: &str) -> bool {
-    let result =
-        all_consuming::<&str, nom::error::Error<&str>, _>(take_while1(|ch: char| {
-            ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
-        }))
-        .parse(input);
+    let result = all_consuming::<&str, nom::error::Error<&str>, _>(take_while1(|ch: char| {
+        ch.is_ascii_alphanumeric() || ch == '-' || ch == '_'
+    }))
+    .parse(input);
 
     result.is_ok()
 }
